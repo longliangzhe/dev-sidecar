@@ -1,0 +1,38 @@
+name: Sync with upstream
+
+# 触发条件：每天凌晨3点自动运行，也可手动触发
+on:
+  schedule:
+    - cron: '0,10,20,30,40,50 * * * *'  # 每天UTC时间3点（北京时间11点）运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 克隆当前fork仓库到运行环境
+      - name: Checkout fork repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史提交
+
+      # 2. 添加上游仓库（原仓库）地址
+      - name: Add upstream repo
+        run: |
+          git remote add upstream https://github.com/docmirror/dev-sidecar.git
+          # 验证上游仓库是否添加成功
+          git remote -v
+
+      # 3. 拉取上游仓库的最新代码
+      - name: Fetch upstream updates
+        run: git fetch upstream
+
+      # 4. 合并上游仓库的主分支到当前分支（假设主分支为main，若为master需修改）
+      - name: Merge upstream changes
+        run: |
+          git checkout master
+          git merge upstream/master --allow-unrelated-histories
+
+      # 5. 推送到你的fork仓库（自动触发GitHub的更新）
+      - name: Push to fork repo
+        run: git push origin main
